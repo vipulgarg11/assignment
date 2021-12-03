@@ -20,32 +20,32 @@ class UrlScrapper < Kimurai::Base
     # scrape body here
     domain = browser.current_host.split("//").last
     browser.save_page Dir.pwd + "/#{domain}.html"
-    return {
+    {
       images: response.xpath("//img/@src").count,
       num_links: response.xpath('//a/@href').count,
       site: domain,
-      last_fetch: Time.now
+      last_fetch: Time.now.utc.strftime("%a %b %d %Y %H:%M UTC")
     }
   end
 end
 
 class Fetch
-  @metadata= false
+  @metadata = false
   @urls = []
 
   def run(input)
     process_input(input)
 
-    get_html()
+    fetch_html
   end
 
   def process_input(input)
-    vars = input.map{|elem| elem if elem.start_with?("--")}.compact
-    @metadata = vars.include?("--metadata")
+    vars = input.map{|elem| elem if elem.start_with?('--')}.compact
+    @metadata = vars.include?('--metadata')
     @urls = input - vars
   end
 
-  def get_html
+  def fetch_html
     threads = []
     @urls.each do |url|
       threads << Thread.new {

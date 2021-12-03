@@ -1,0 +1,9 @@
+version: '2'
+services:
+  ruby:
+    image: ruby:2.6.5
+    command: bash -c './fetch  --metadata https://chirrup.in https://www.google.com https://autify.com'
+    # command: bash -c 'ruby -v'
+    working_dir: /usr/app/
+    volumes:
+      - ./:/usr/app/
