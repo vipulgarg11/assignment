@@ -1,0 +1,63 @@
+#!/usr/bin/env ruby
+
+require 'bundler/inline'
+gemfile do
+  source 'https://rubygems.org'
+  gem 'kimurai'
+  gem 'pry'
+end
+
+require 'kimurai'
+
+class UrlScrapper < Kimurai::Base
+  attr_accessor :start_urls
+
+  @name = 'slack_spider'
+  @engine = :mechanize
+  @start_urls = []
+
+  def parse(response, url:, data: {})
+    # scrape body here
+    domain = browser.current_host.split("//").last
+    browser.save_page Dir.pwd + "/#{domain}.html"
+    return {
+      images: response.xpath("//img/@src").count,
+      num_links: response.xpath('//a/@href').count,
+      site: domain,
+      last_fetch: Time.now
+    }
+  end
+end
+
+class Fetch
+  @metadata= false
+  @urls = []
+
+  def run(input)
+    process_input(input)
+
+    get_html()
+  end
+
+  def process_input(input)
+    vars = input.map{|elem| elem if elem.start_with?("--")}.compact
+    @metadata = vars.include?("--metadata")
+    @urls = input - vars
+  end
+
+  def get_html
+    threads = []
+    @urls.each do |url|
+      threads << Thread.new {
+        UrlScrapper.parse!(:parse, url: url)
+      }
+    end
+
+    threads.each do |t|
+      t.join
+      puts t.value if @metadata
+    end
+  end
+end
+
+Fetch.new.run(ARGV)
